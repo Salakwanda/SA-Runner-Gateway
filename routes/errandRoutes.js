@@ -351,6 +351,53 @@ router.put("/api/errands/:id", (req, res) => {
   res.json({ status: "success", message: "Request updated.", data: updated });
 });
 
+router.post("/api/errands/:id/cancel", (req, res) => {
+  if (!req.user || req.user.role !== "CLIENT") {
+    return res
+      .status(401)
+      .json({ status: "error", message: "Client login required." });
+  }
+
+  const errand = db
+    .prepare("SELECT client_id, status FROM errands WHERE id = ?")
+    .get(req.params.id);
+
+  if (!errand) {
+    return res
+      .status(404)
+      .json({ status: "error", message: "Errand not found." });
+  }
+
+  if (errand.client_id !== req.user.id) {
+    return res.status(403).json({
+      status: "error",
+      message: "You can only cancel your own errands.",
+    });
+  }
+
+  if (!["PENDING", "ACCEPTED"].includes(errand.status)) {
+    return res.status(400).json({
+      status: "error",
+      message: "This request can no longer be cancelled.",
+    });
+  }
+
+  const result = db
+    .prepare(
+      "UPDATE errands SET status = 'CANCELLED' WHERE id = ? AND client_id = ? AND status IN ('PENDING', 'ACCEPTED')",
+    )
+    .run(req.params.id, req.user.id);
+
+  if (result.changes === 0) {
+    return res.status(400).json({
+      status: "error",
+      message: "This request could not be cancelled.",
+    });
+  }
+
+  res.json({ status: "success", message: "Request cancelled." });
+});
+
 router.post("/api/errands/:id/status", (req, res) => {
   if (!req.user || req.user.role !== "RUNNER") {
     return res

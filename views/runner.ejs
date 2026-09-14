@@ -39,6 +39,11 @@
     );
 
   async function loadFeed() {
+    const hasActiveChatDraft = [
+      ...document.querySelectorAll(".chat-input"),
+    ].some((input) => document.activeElement === input || input.value.trim());
+    if (hasActiveChatDraft) return;
+
     const response = await fetch("/api/runner/feed");
     const data = await response.json();
     if (data.status !== "success") {
@@ -48,10 +53,16 @@
     }
     feedStatus.textContent = `${data.runner_city} · live feed`;
     if (!data.data.length) {
+      document.querySelectorAll("[data-errand]").forEach((card) => {
+        clearInterval(card.chatRefresh);
+      });
       feed.innerHTML =
         '<div class="rounded-2xl border border-[#dce5de] bg-white p-8 text-center text-[#61706a]">No open requests in your city right now. This feed updates automatically.</div>';
       return;
     }
+    document.querySelectorAll("[data-errand]").forEach((card) => {
+      clearInterval(card.chatRefresh);
+    });
     feed.innerHTML = data.data
       .map(
         (errand) => `
@@ -59,8 +70,8 @@
         <div class="flex flex-col justify-between gap-4 sm:flex-row"><div><p class="text-xs font-semibold uppercase tracking-wider text-[#87948d]">${escapeHtml(errand.id)}</p><h2 class="mt-2 font-display text-2xl font-bold">${escapeHtml(errand.pickup_city)} <span class="text-[#e65f43]">→</span> ${escapeHtml(errand.dropoff_city)}</h2></div><div class="rounded-2xl bg-[#edf5ef] px-5 py-3 sm:text-right"><p class="text-xs font-semibold uppercase tracking-wider text-[#61706a]">Reward</p><p class="font-display text-2xl font-bold text-[#183d32]">R ${escapeHtml(errand.reward_amount)}</p></div></div>
         <p class="mt-5 leading-7 text-[#61706a]">${escapeHtml(errand.item_description)}</p><p class="mt-2 text-sm text-[#87948d]">Delivery method: ${escapeHtml(errand.delivery_method)}</p>
         <div class="mt-6 border-t border-[#edf1ed] pt-5"><p class="mb-3 text-sm font-semibold">Ask a question before accepting</p><div class="flex gap-2"><input class="chat-input min-w-0 flex-1 rounded-xl border border-[#cddbd2] px-4 py-3 text-sm outline-none focus:border-[#183d32]" placeholder="Message the client..." /><button class="send-chat rounded-xl border border-[#cddbd2] px-4 py-3 text-sm font-semibold text-[#315b4b] transition hover:bg-[#edf5ef]">Send</button></div><div class="chat-messages mt-4 max-h-40 space-y-2 overflow-y-auto text-sm text-[#61706a]"></div></div>
-        <button class="accept-errand mt-5 w-full rounded-xl bg-[#183d32] px-5 py-3.5 font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[#245847]" data-id="${escapeHtml(errand.id)}">Accept this errand</button>
-        <button class="reopen-errand mt-3 w-full rounded-xl border border-[#e65f43] bg-white px-5 py-3.5 font-semibold text-[#a8432d] transition hover:bg-[#fff4f0]" data-id="${escapeHtml(errand.id)}">Put back online</button>
+        <button type="button" class="accept-errand mt-5 w-full rounded-xl bg-[#183d32] px-5 py-3.5 font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[#245847]" data-id="${escapeHtml(errand.id)}">Accept this errand</button>
+        <button type="button" class="reopen-errand mt-3 w-full rounded-xl border border-[#e65f43] bg-white px-5 py-3.5 font-semibold text-[#a8432d] transition hover:bg-[#fff4f0]" data-id="${escapeHtml(errand.id)}">Put back online</button>
       </article>`,
       )
       .join("");
@@ -108,7 +119,8 @@
       renderMessages();
     });
     await renderMessages();
-    setInterval(renderMessages, 4000);
+    if (!card.isConnected) return;
+    card.chatRefresh = setInterval(renderMessages, 4000);
   }
 
   async function reopen(errandId) {
@@ -136,7 +148,10 @@
     await loadFeed();
   }
   loadFeed();
-  setInterval(loadFeed, 5000);
+  setInterval(() => {
+    if (document.activeElement?.classList.contains("chat-input")) return;
+    loadFeed();
+  }, 5000);
 </script>
 
 <%- include('partials/footer') %>
