@@ -1,0 +1,90 @@
+<%- include('partials/header') %>
+
+<div
+  class="page-enter mx-auto max-w-3xl rounded-[1.5rem] border border-[#dce5de] bg-white p-6 shadow-[0_18px_50px_rgba(35,67,54,.06)] sm:p-10"
+>
+  <p class="text-sm font-semibold uppercase tracking-[.2em] text-[#e65f43]">
+    Delivery visibility
+  </p>
+  <h1 class="mt-2 font-display text-4xl font-bold">Track an errand</h1>
+  <p class="mt-3 text-[#61706a]">
+    Enter the reference from your confirmation to see the latest status.
+  </p>
+  <form id="trackForm" class="mt-8 flex flex-col gap-3 sm:flex-row">
+    <div class="flex-1">
+      <input
+        id="trackingId"
+        class="w-full rounded-xl border border-[#cddbd2] bg-[#fbfcfa] px-4 py-3 outline-none focus:border-[#183d32]"
+        placeholder="Tracking ID (RUN-ZA-######)"
+      />
+    </div>
+    <div class="col-auto">
+      <button
+        class="rounded-xl bg-[#183d32] px-5 py-3 font-semibold text-white transition hover:bg-[#245847]"
+      >
+        Lookup
+      </button>
+    </div>
+  </form>
+
+  <div id="result" class="mt-8"></div>
+</div>
+
+<script>
+  const renderErrand = (errand) => {
+    const result = document.getElementById("result");
+    result.innerHTML = `
+      <div class="rounded-2xl border border-[#dce5de] bg-[#fbfcfa] p-5">
+        <p class="text-xs font-semibold uppercase tracking-[.2em] text-[#e65f43]">${errand.id}</p>
+        <h3 class="mt-2 font-display text-2xl font-bold">${errand.status}</h3>
+        <p class="mt-2 text-[#61706a]">${errand.pickup_city} → ${errand.dropoff_city}</p>
+        <p class="mt-2 text-[#61706a]">Delivery method: ${errand.delivery_method}</p>
+        <p class="mt-2 text-[#61706a]">Reward: R ${errand.reward_amount}</p>
+        <p class="mt-3 text-[#61706a]">Description: ${errand.item_description}</p>
+      </div>
+    `;
+  };
+
+  async function loadCurrentClientErrands() {
+    const res = await fetch("/api/client/errands");
+    const data = await res.json();
+    const result = document.getElementById("result");
+    if (data.status !== "success" || !data.data || data.data.length === 0) {
+      result.innerHTML =
+        '<div class="rounded-2xl border border-dashed border-[#dce5de] p-5 text-[#61706a]">No active errands to track yet.</div>';
+      return;
+    }
+
+    result.innerHTML = data.data
+      .map(
+        (errand) => `
+        <div class="mb-3 rounded-2xl border border-[#dce5de] bg-[#fbfcfa] p-4">
+          <p class="text-xs font-semibold uppercase tracking-[.2em] text-[#e65f43]">${errand.id}</p>
+          <h3 class="mt-2 font-display text-xl font-bold">${errand.status}</h3>
+          <p class="mt-2 text-[#61706a]">${errand.pickup_city} → ${errand.dropoff_city}</p>
+          <p class="mt-1 text-[#61706a]">Reward: R ${errand.reward_amount}</p>
+          <p class="mt-1 text-[#61706a]">Delivery: ${errand.delivery_method}</p>
+        </div>
+      `,
+      )
+      .join("");
+  }
+
+  document.getElementById("trackForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const id = document.getElementById("trackingId").value.trim();
+    if (!id) return;
+    const res = await fetch(`/api/errands/${encodeURIComponent(id)}`);
+    const data = await res.json();
+    const result = document.getElementById("result");
+    if (data.status !== "success") {
+      result.innerHTML = `<div class="alert alert-warning">${data.message || JSON.stringify(data)}</div>`;
+      return;
+    }
+    renderErrand(data.data);
+  });
+
+  loadCurrentClientErrands();
+</script>
+
+<%- include('partials/footer') %>

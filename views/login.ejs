@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Log in | SA Runner Gateway</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ["DM Sans", "sans-serif"], display: ["Space Grotesk", "sans-serif"] } } } };</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body class="min-h-screen bg-[#f7f8f3] font-sans text-[#15231f]">
+    <main class="mx-auto flex min-h-screen max-w-6xl items-center px-5 py-10 lg:px-8">
+      <div class="grid w-full overflow-hidden rounded-[2rem] border border-[#dce5de] bg-white shadow-[0_24px_80px_rgba(35,67,54,.10)] lg:grid-cols-[.85fr_1.15fr]">
+        <section class="relative overflow-hidden bg-[#183d32] px-7 py-10 text-white sm:px-12 lg:py-14">
+          <div class="absolute -right-16 -top-16 h-48 w-48 rounded-full border-[28px] border-[#e65f43]/30"></div>
+          <a href="/" class="relative font-display text-lg font-bold"><span class="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-[#f29a70] align-middle"></span>SA Runner Gateway</a>
+          <div class="relative mt-24 max-w-sm">
+            <p class="mb-4 text-sm font-semibold uppercase tracking-[.2em] text-[#f29a70]">Move what matters</p>
+            <h1 class="font-display text-4xl font-bold leading-tight sm:text-5xl">Your city,<br />in motion.</h1>
+            <p class="mt-6 text-base leading-7 text-[#c9d9cf]">One calm place to request, accept and follow every local delivery.</p>
+          </div>
+        </section>
+        <section class="px-7 py-10 sm:px-12 lg:py-14">
+          <div class="mx-auto max-w-md">
+            <p class="text-sm font-semibold text-[#e65f43]">Welcome back</p>
+            <h2 class="mt-2 font-display text-3xl font-bold">Log in to continue</h2>
+            <p class="mt-3 text-[#61706a]">Choose how you use the gateway today.</p>
+            <% if (error) { %><div class="mt-6 rounded-xl border border-[#f0b6a5] bg-[#fff4f0] px-4 py-3 text-sm text-[#a8432d]"><%= error %></div><% } %>
+            <form class="mt-8 space-y-6" method="post" action="/login">
+              <fieldset>
+                <legend class="mb-3 text-sm font-semibold">I am logging in as a</legend>
+                <div class="grid grid-cols-3 gap-3">
+                  <label class="cursor-pointer"><input class="peer sr-only" type="radio" name="role" value="CLIENT" <%= selectedRole === 'CLIENT' ? 'checked' : '' %> /><span class="block rounded-2xl border border-[#dce5de] px-4 py-4 text-center text-sm font-semibold transition peer-checked:border-[#183d32] peer-checked:bg-[#edf5ef] peer-checked:text-[#183d32] hover:border-[#9ab5a3]">Client</span></label>
+                  <label class="cursor-pointer"><input class="peer sr-only" type="radio" name="role" value="RUNNER" <%= selectedRole === 'RUNNER' ? 'checked' : '' %> /><span class="block rounded-2xl border border-[#dce5de] px-4 py-4 text-center text-sm font-semibold transition peer-checked:border-[#183d32] peer-checked:bg-[#edf5ef] peer-checked:text-[#183d32] hover:border-[#9ab5a3]">Runner</span></label>
+                  <label class="cursor-pointer"><input class="peer sr-only" type="radio" name="role" value="ADMIN" <%= selectedRole === 'ADMIN' ? 'checked' : '' %> /><span class="block rounded-2xl border border-[#dce5de] px-4 py-4 text-center text-sm font-semibold transition peer-checked:border-[#183d32] peer-checked:bg-[#edf5ef] peer-checked:text-[#183d32] hover:border-[#9ab5a3]">Admin</span></label>
+                </div>
+              </fieldset>
+              <label class="block text-sm font-semibold">Email address<input class="mt-2 w-full rounded-xl border border-[#cddbd2] bg-[#fbfcfa] px-4 py-3.5 font-normal outline-none transition placeholder:text-[#9aa9a1] focus:border-[#183d32] focus:ring-4 focus:ring-[#183d32]/10" type="email" name="email" placeholder="you@example.com" required /></label>
+              <label class="block text-sm font-semibold">Password<input class="mt-2 w-full rounded-xl border border-[#cddbd2] bg-[#fbfcfa] px-4 py-3.5 font-normal outline-none transition placeholder:text-[#9aa9a1] focus:border-[#183d32] focus:ring-4 focus:ring-[#183d32]/10" type="password" name="password" placeholder="Your password" /></label>
+              <button class="w-full rounded-xl bg-[#183d32] px-5 py-4 font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[#245847] hover:shadow-lg" type="submit">Continue securely</button>
+            </form>
+            <p class="mt-6 text-center text-sm text-[#61706a]">New here? <a class="font-semibold text-[#183d32] underline" href="/register">Create an account</a></p>
+            <p class="mt-6 text-center text-xs text-[#87948d]">Use the email linked to your SA Runner Gateway account.</p>
+          </div>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

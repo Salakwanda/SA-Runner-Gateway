@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SA Runner Gateway</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ["DM Sans", "sans-serif"], display: ["Space Grotesk", "sans-serif"] },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body class="min-h-screen bg-[#f7f8f3] text-[#15231f] font-sans">
+    <nav class="border-b border-[#dce5de] bg-[#f7f8f3]/90 backdrop-blur-md">
+      <div class="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 lg:px-8">
+        <a class="font-display text-lg font-bold tracking-tight" href="/">
+          <span class="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-[#e65f43] align-middle"></span>SA Runner Gateway
+        </a>
+        <div class="flex items-center gap-2 text-sm font-semibold">
+          <a class="nav-link hidden px-3 py-2 text-[#61706a] transition hover:text-[#15231f] sm:inline-block" href="/track">Track</a>
+          <% if (currentUser) { %>
+            <% if (currentUser.role === 'CLIENT') { %><a class="nav-link px-3 py-2 text-[#61706a] transition hover:text-[#15231f]" href="/create">Request errand</a><% } %>
+            <% if (currentUser.role === 'RUNNER') { %><a class="nav-link px-3 py-2 text-[#61706a] transition hover:text-[#15231f]" href="/runner">Runner feed</a><% } %>
+            <% if (currentUser.role === 'ADMIN') { %><a class="nav-link px-3 py-2 text-[#61706a] transition hover:text-[#15231f]" href="/admin">Admin</a><% } %>
+            <form method="post" action="/logout"><button class="ml-1 rounded-full border border-[#cddbd2] px-4 py-2 text-[#315b4b] transition hover:border-[#315b4b] hover:bg-white">Log out</button></form>
+          <% } else { %>
+            <a class="px-3 py-2 text-[#61706a] transition hover:text-[#15231f]" href="/register">Create account</a>
+            <a class="rounded-full bg-[#183d32] px-4 py-2 text-white transition hover:-translate-y-0.5 hover:bg-[#245847]" href="/login">Log in</a>
+          <% } %>
+        </div>
+      </div>
+    </nav>
+    <main class="mx-auto max-w-6xl px-5 py-10 lg:px-8">

@@ -1,0 +1,53 @@
+:root {
+  --ink: #15231f;
+  --muted: #61706a;
+  --line: #dce5de;
+  --accent: #e65f43;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  background-image: radial-gradient(
+    circle at 90% 0%,
+    rgba(230, 95, 67, 0.09),
+    transparent 28rem
+  );
+}
+.font-display {
+  font-family: "Space Grotesk", sans-serif;
+}
+.page-enter {
+  animation: page-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.rise-in {
+  animation: rise-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

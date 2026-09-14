@@ -1,0 +1,282 @@
+<%- include('partials/header') %>
+
+<div class="page-enter mx-auto max-w-3xl">
+  <div class="mb-8">
+    <p class="text-sm font-semibold uppercase tracking-[.2em] text-[#e65f43]">
+      Client workspace
+    </p>
+    <h1 class="mt-2 font-display text-4xl font-bold">Request a new errand</h1>
+    <p class="mt-3 text-[#61706a]">
+      Tell us where it starts, where it is going and what your runner should
+      know.
+    </p>
+  </div>
+  <div
+    class="rounded-[1.5rem] border border-[#dce5de] bg-white p-6 shadow-[0_18px_50px_rgba(35,67,54,.06)] sm:p-8"
+  >
+    <form id="createErrandForm" method="post" action="/api/errands">
+      <div class="grid gap-5 sm:grid-cols-2">
+        <div>
+          <label class="text-sm font-semibold">Pickup city</label>
+          <input
+            name="pickup_city"
+            class="mt-2 w-full rounded-xl border border-[#cddbd2] bg-[#fbfcfa] px-4 py-3 outline-none focus:border-[#183d32]"
+            required
+          />
+        </div>
+        <div>
+          <label class="text-sm font-semibold">Dropoff city</label>
+          <input
+            name="dropoff_city"
+            class="mt-2 w-full rounded-xl border border-[#cddbd2] bg-[#fbfcfa] px-4 py-3 outline-none focus:border-[#183d32]"
+            required
+          />
+        </div>
+      </div>
+      <div class="mt-5">
+        <label class="text-sm font-semibold">Delivery method</label>
+        <input
+          name="delivery_method"
+          class="mt-2 w-full rounded-xl border border-[#cddbd2] bg-[#fbfcfa] px-4 py-3 outline-none focus:border-[#183d32]"
+          placeholder="e.g. PEP PAXI Point-to-Point"
+          required
+        />
+      </div>
+      <div class="mt-5">
+        <label class="text-sm font-semibold">Item description</label>
+        <textarea
+          name="item_description"
+          class="mt-2 w-full rounded-xl border border-[#cddbd2] bg-[#fbfcfa] px-4 py-3 outline-none focus:border-[#183d32]"
+          rows="3"
+          required
+        ></textarea>
+      </div>
+      <div class="mt-5">
+        <label class="text-sm font-semibold">Reward amount (ZAR)</label>
+        <input
+          name="reward_amount"
+          type="number"
+          step="0.01"
+          class="mt-2 w-full rounded-xl border border-[#cddbd2] bg-[#fbfcfa] px-4 py-3 outline-none focus:border-[#183d32]"
+          required
+        />
+      </div>
+      <button
+        type="submit"
+        class="mt-6 rounded-xl bg-[#183d32] px-6 py-3.5 font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[#245847]"
+      >
+        Request errand →
+      </button>
+    </form>
+    <div
+      id="requestResult"
+      class="mt-6 hidden rounded-2xl bg-[#edf5ef] p-5 text-sm text-[#315b4b]"
+    ></div>
+
+    <div class="mt-6">
+      <h4 class="mb-3 font-semibold">Your active requests</h4>
+      <div id="clientErrandsList" class="space-y-3"></div>
+    </div>
+
+    <div id="clientChat" class="mt-6 hidden border-t border-[#edf1ed] pt-6">
+      <p class="font-semibold">Chat with interested runners</p>
+      <div
+        id="clientMessages"
+        class="mt-4 max-h-48 space-y-2 overflow-y-auto text-sm text-[#61706a]"
+      ></div>
+      <div class="mt-4 flex gap-2">
+        <input
+          id="clientMessage"
+          class="min-w-0 flex-1 rounded-xl border border-[#cddbd2] px-4 py-3 text-sm outline-none focus:border-[#183d32]"
+          placeholder="Reply to a runner..."
+        /><button
+          id="sendClientMessage"
+          class="rounded-xl bg-[#183d32] px-4 py-3 text-sm font-semibold text-white"
+        >
+          Send
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const createForm = document.getElementById("createErrandForm");
+  const requestResult = document.getElementById("requestResult");
+  const clientChat = document.getElementById("clientChat");
+  const clientMessages = document.getElementById("clientMessages");
+  const clientErrandsList = document.getElementById("clientErrandsList");
+  let createdErrandId = null;
+  let isEditingErrand = false;
+  const escapeClientHtml = (value) =>
+    String(value ?? "").replace(
+      /[&<>"']/g,
+      (char) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#039;",
+        })[char],
+    );
+
+  async function loadClientErrands() {
+    const response = await fetch("/api/client/errands");
+    const data = await response.json();
+    if (data.status !== "success") {
+      clientErrandsList.innerHTML = `<div class="text-sm text-[#a8432d]">${escapeClientHtml(data.message || "Unable to load errands.")}</div>`;
+      return;
+    }
+
+    if (!data.data || data.data.length === 0) {
+      clientErrandsList.innerHTML =
+        '<div class="rounded-xl border border-dashed border-[#dce5de] p-3 text-sm text-[#61706a]">No active errands yet.</div>';
+      return;
+    }
+
+    clientErrandsList.innerHTML = data.data
+      .map(
+        (errand) => `
+          <div class="rounded-xl border border-[#dce5de] bg-[#fbfcfa] p-3">
+            <div class="flex justify-between gap-3">
+              <div>
+                <strong>${escapeClientHtml(errand.id)}</strong><br>
+                <span class="text-sm text-[#61706a]">${escapeClientHtml(errand.pickup_city)} → ${escapeClientHtml(errand.dropoff_city)}</span>
+              </div>
+              <span class="rounded-full bg-[#edf5ef] px-2 py-1 text-xs font-semibold text-[#315b4b]">${escapeClientHtml(errand.status)}</span>
+            </div>
+            <div class="mt-2 text-sm text-[#61706a]">${escapeClientHtml(errand.item_description)}</div>
+            <div class="mt-3 flex gap-2">
+              <button class="edit-errand-btn rounded-xl border border-[#cddbd2] px-3 py-2 text-xs font-semibold text-[#315b4b]" data-id="${escapeClientHtml(errand.id)}">Edit</button>
+              <button class="chat-errand-btn rounded-xl bg-[#183d32] px-3 py-2 text-xs font-semibold text-white" data-id="${escapeClientHtml(errand.id)}">Open chat</button>
+            </div>
+          </div>
+        `,
+      )
+      .join("");
+
+    document.querySelectorAll(".edit-errand-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.id;
+        const res = await fetch(`/api/errands/${encodeURIComponent(id)}`);
+        const data = await res.json();
+        if (data.status !== "success") return;
+        const errand = data.data;
+        createForm.querySelector('input[name="pickup_city"]').value =
+          errand.pickup_city || "";
+        createForm.querySelector('input[name="dropoff_city"]').value =
+          errand.dropoff_city || "";
+        createForm.querySelector('input[name="delivery_method"]').value =
+          errand.delivery_method || "";
+        createForm.querySelector('textarea[name="item_description"]').value =
+          errand.item_description || "";
+        createForm.querySelector('input[name="reward_amount"]').value =
+          errand.reward_amount || "";
+        createdErrandId = errand.id;
+        isEditingErrand = true;
+        requestResult.className =
+          "mt-6 rounded-2xl bg-[#edf5ef] p-5 text-sm text-[#315b4b]";
+        requestResult.textContent = `Editing request ${createdErrandId}. Save changes to update it.`;
+        requestResult.classList.remove("hidden");
+        clientChat.classList.remove("hidden");
+        await loadClientMessages();
+      });
+    });
+
+    document.querySelectorAll(".chat-errand-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        createdErrandId = btn.dataset.id;
+        isEditingErrand = false;
+        clientChat.classList.remove("hidden");
+        await loadClientMessages();
+      });
+    });
+  }
+
+  async function loadClientMessages() {
+    if (!createdErrandId) return;
+    const response = await fetch(
+      `/api/errands/${encodeURIComponent(createdErrandId)}/messages`,
+    );
+    const data = await response.json();
+    if (data.status === "success")
+      clientMessages.innerHTML =
+        data.data
+          .map(
+            (message) =>
+              `<p><strong class="text-[#183d32]">${escapeClientHtml(message.sender_name)}:</strong> ${escapeClientHtml(message.message_text)}</p>`,
+          )
+          .join("") ||
+        '<p class="text-[#9aa9a1]">Runner questions will appear here.</p>';
+  }
+
+  createForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(createForm);
+    const payload = Object.fromEntries(formData.entries());
+    const url =
+      isEditingErrand && createdErrandId
+        ? `/api/errands/${encodeURIComponent(createdErrandId)}`
+        : createForm.action;
+    const method = isEditingErrand && createdErrandId ? "PUT" : "POST";
+
+    const response = await fetch(url, {
+      method,
+      headers: {
+        "Content-Type":
+          method === "PUT"
+            ? "application/json"
+            : "application/x-www-form-urlencoded",
+      },
+      body:
+        method === "PUT"
+          ? JSON.stringify(payload)
+          : new URLSearchParams(formData),
+    });
+    const data = await response.json();
+    if (data.status !== "success") {
+      requestResult.className =
+        "mt-6 rounded-2xl bg-[#fff4f0] p-5 text-sm text-[#a8432d]";
+      requestResult.textContent = data.message || "Could not save the errand.";
+      return;
+    }
+
+    createdErrandId = data.data
+      ? data.data.id
+      : data.tracking_id || createdErrandId;
+    isEditingErrand = false;
+    requestResult.className =
+      "mt-6 rounded-2xl bg-[#edf5ef] p-5 text-sm text-[#315b4b]";
+    requestResult.textContent = data.data
+      ? `Request ${createdErrandId} was updated successfully.`
+      : `Request ${createdErrandId} is live. Verified runners can now see it and chat before any runner accepts.`;
+    requestResult.classList.remove("hidden");
+    clientChat.classList.remove("hidden");
+    await loadClientMessages();
+    await loadClientErrands();
+  });
+
+  document
+    .getElementById("sendClientMessage")
+    .addEventListener("click", async () => {
+      const input = document.getElementById("clientMessage");
+      if (!createdErrandId || !input.value.trim()) return;
+      await fetch(
+        `/api/errands/${encodeURIComponent(createdErrandId)}/messages`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message_text: input.value.trim() }),
+        },
+      );
+      input.value = "";
+      loadClientMessages();
+    });
+
+  loadClientErrands();
+  setInterval(loadClientMessages, 4000);
+  setInterval(loadClientErrands, 5000);
+</script>
+
+<%- include('partials/footer') %>
