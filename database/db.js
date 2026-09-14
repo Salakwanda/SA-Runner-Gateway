@@ -1,8 +1,17 @@
 const Database = require("better-sqlite3");
+const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 
-const db = new Database(path.join(__dirname, "errands.db"));
+const configuredDatabasePath = process.env.DATABASE_PATH;
+const databasePath = configuredDatabasePath
+  ? path.resolve(configuredDatabasePath)
+  : process.env.VERCEL
+    ? path.join("/tmp", "errands.db")
+    : path.join(__dirname, "errands.db");
+
+fs.mkdirSync(path.dirname(databasePath), { recursive: true });
+const db = new Database(databasePath);
 
 db.pragma("journal_mode = WAL");
 
