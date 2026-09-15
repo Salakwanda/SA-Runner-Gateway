@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const express = require("express");
 const path = require("path");
 const crypto = require("crypto");
@@ -27,7 +29,12 @@ app.use(express.json()); // parse JSON bodies
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok" });
+  try {
+    db.prepare("SELECT 1").get();
+    res.status(200).json({ status: "ok" });
+  } catch (error) {
+    res.status(503).json({ status: "error", message: "Database unavailable." });
+  }
 });
 
 // Views and static

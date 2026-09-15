@@ -6,11 +6,15 @@ const crypto = require("crypto");
 const configuredDatabasePath = process.env.DATABASE_PATH;
 const databasePath = configuredDatabasePath
   ? path.resolve(configuredDatabasePath)
-  : path.join(__dirname, "errands.db");
+  : process.env.RENDER
+    ? path.join("/var", "data", "errands.db")
+    : path.join(__dirname, "errands.db");
 
 fs.mkdirSync(path.dirname(databasePath), { recursive: true });
 const db = new Database(databasePath);
 
+db.pragma("busy_timeout = 5000");
+db.pragma("foreign_keys = ON");
 db.pragma("journal_mode = WAL");
 
 db.exec(`
