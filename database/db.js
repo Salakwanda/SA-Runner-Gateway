@@ -6,9 +6,7 @@ const crypto = require("crypto");
 const configuredDatabasePath = process.env.DATABASE_PATH;
 const databasePath = configuredDatabasePath
   ? path.resolve(configuredDatabasePath)
-  : process.env.RENDER
-    ? path.join("/var", "data", "errands.db")
-    : path.join(__dirname, "errands.db");
+  : path.join(__dirname, "errands.db");
 
 fs.mkdirSync(path.dirname(databasePath), { recursive: true });
 const db = new Database(databasePath);
@@ -85,7 +83,9 @@ const hashPassword = (
   return `${salt}:${hash}`;
 };
 
-const adminPasswordHash = hashPassword("Admin@123");
+const adminPasswordHash = hashPassword(
+  process.env.ADMIN_PASSWORD || "Admin@123",
+);
 
 const getUserIdByEmail = db.prepare(`SELECT id FROM users WHERE email = ?`);
 function ensureUser(id, full_name, email, phone, role, passwordHash = null) {

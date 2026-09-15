@@ -1,6 +1,9 @@
 const Database = require("better-sqlite3");
 const path = require("path");
-const dbPath = path.join(__dirname, "..", "database", "errands.db");
+const configuredDatabasePath = process.env.DATABASE_PATH;
+const dbPath = configuredDatabasePath
+  ? path.resolve(configuredDatabasePath)
+  : path.join(__dirname, "..", "database", "errands.db");
 console.log("Inspecting DB at", dbPath);
 const fs = require("fs");
 if (!fs.existsSync(dbPath)) {

@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "test": "node scripts/diagnose.js",
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "engines": {
-    "node": ">=22 <23"
+    "node": ">=20 <23"
   },
   "keywords": [],
   "author": "",
@@ -15,7 +16,7 @@
   "description": "",
   "dependencies": {
     "axios": "^1.20.0",
-    "better-sqlite3": "^13.0.3",
+    "better-sqlite3": "^11.10.0",
     "dotenv": "^17.4.2",
     "ejs": "^6.0.1",
     "express": "^5.2.1"

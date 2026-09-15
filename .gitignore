@@ -1,0 +1,5 @@
+node_modules/
+database/errands.db
+database/*.db-shm
+database/*.db-wal
+.env

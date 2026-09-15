@@ -150,8 +150,12 @@ router.get("/api/client/:clientId/errands", (req, res) => {
   const errands = db
     .prepare(
       `
-    SELECT * FROM errands
-    WHERE client_id = ?
+    SELECT errands.*, client.full_name AS client_name,
+           runner.full_name AS runner_name
+    FROM errands
+    JOIN users AS client ON client.id = errands.client_id
+    LEFT JOIN users AS runner ON runner.id = errands.runner_id
+    WHERE errands.client_id = ?
     ORDER BY created_at DESC
   `,
     )
@@ -170,10 +174,41 @@ router.get("/api/client/errands", (req, res) => {
   const errands = db
     .prepare(
       `
-        SELECT * FROM errands
-        WHERE client_id = ? AND status IN ('PENDING', 'ACCEPTED', 'IN_TRANSIT', 'COMPLETED', 'CANCELLED')
+         SELECT errands.*, client.full_name AS client_name,
+           runner.full_name AS runner_name
+         FROM errands
+         JOIN users AS client ON client.id = errands.client_id
+         LEFT JOIN users AS runner ON runner.id = errands.runner_id
+         WHERE errands.client_id = ? AND errands.status IN ('PENDING', 'ACCEPTED', 'IN_TRANSIT', 'COMPLETED', 'CANCELLED')
         ORDER BY created_at DESC
       `,
+    )
+    .all(req.user.id);
+
+  res.json({ status: "success", role: req.user.role, data: errands });
+});
+
+router.get("/api/my/errands", (req, res) => {
+  if (!req.user || !["CLIENT", "RUNNER"].includes(req.user.role)) {
+    return res.status(401).json({
+      status: "error",
+      message: "Client or runner login required.",
+    });
+  }
+
+  const filter =
+    req.user.role === "CLIENT"
+      ? "errands.client_id = ?"
+      : "errands.runner_id = ?";
+  const errands = db
+    .prepare(
+      `SELECT errands.*, client.full_name AS client_name,
+              runner.full_name AS runner_name
+       FROM errands
+       JOIN users AS client ON client.id = errands.client_id
+       LEFT JOIN users AS runner ON runner.id = errands.runner_id
+       WHERE ${filter}
+       ORDER BY errands.created_at DESC`,
     )
     .all(req.user.id);
 
@@ -213,14 +248,18 @@ router.get("/api/runner/feed", (req, res) => {
   const availableErrands = db
     .prepare(
       `
-    SELECT errands.*, users.full_name AS client_name
+    SELECT errands.*, client.full_name AS client_name,
+           runner.full_name AS runner_name,
+           CASE WHEN errands.runner_id = ? THEN 1 ELSE 0 END AS assigned_to_me
     FROM errands
-    JOIN users ON users.id = errands.client_id
-    WHERE status = 'PENDING'
-    ORDER BY created_at DESC
+    JOIN users AS client ON client.id = errands.client_id
+    LEFT JOIN users AS runner ON runner.id = errands.runner_id
+    WHERE (errands.status = 'PENDING' AND errands.runner_id IS NULL)
+       OR errands.runner_id = ?
+    ORDER BY CASE WHEN errands.runner_id = ? THEN 0 ELSE 1 END, errands.created_at DESC
   `,
     )
-    .all();
+    .all(req.user.id, req.user.id, req.user.id);
 
   res.json({
     status: "success",
@@ -264,7 +303,21 @@ router.post("/api/errands/:id/accept", (req, res) => {
   const result = stmt.run(runnerId, id);
 
   if (result.changes > 0) {
-    res.json({ status: "success", message: "Errand accepted successfully!" });
+    const accepted = db
+      .prepare(
+        `SELECT errands.*, client.full_name AS client_name,
+                runner.full_name AS runner_name
+         FROM errands
+         JOIN users AS client ON client.id = errands.client_id
+         LEFT JOIN users AS runner ON runner.id = errands.runner_id
+         WHERE errands.id = ?`,
+      )
+      .get(id);
+    res.json({
+      status: "success",
+      message: "Errand accepted successfully!",
+      data: accepted,
+    });
   } else {
     res.status(400).json({
       status: "error",
@@ -418,6 +471,16 @@ router.post("/api/errands/:id/status", (req, res) => {
       .json({ status: "error", message: "Errand not found." });
   }
 
+  const runner = db
+    .prepare("SELECT is_verified FROM runner_profiles WHERE user_id = ?")
+    .get(req.user.id);
+  if (!runner || runner.is_verified !== 1) {
+    return res.status(403).json({
+      status: "error",
+      message: "Only verified runners can manage errands.",
+    });
+  }
+
   if (errand.runner_id && errand.runner_id !== req.user.id) {
     return res.status(403).json({
       status: "error",
@@ -425,7 +488,11 @@ router.post("/api/errands/:id/status", (req, res) => {
     });
   }
 
-  if (status === "PENDING" && errand.runner_id === req.user.id) {
+  if (
+    status === "PENDING" &&
+    errand.runner_id === req.user.id &&
+    ["ACCEPTED", "IN_TRANSIT"].includes(errand.status)
+  ) {
     db.prepare(
       "UPDATE errands SET runner_id = NULL, status = 'PENDING' WHERE id = ? AND runner_id = ?",
     ).run(req.params.id, req.user.id);
@@ -468,7 +535,16 @@ router.post("/api/errands/:id/status", (req, res) => {
 // Get a single errand by id
 router.get("/api/errands/:id", (req, res) => {
   const { id } = req.params;
-  const errand = db.prepare(`SELECT * FROM errands WHERE id = ?`).get(id);
+  const errand = db
+    .prepare(
+      `SELECT errands.*, client.full_name AS client_name,
+              runner.full_name AS runner_name
+       FROM errands
+       JOIN users AS client ON client.id = errands.client_id
+       LEFT JOIN users AS runner ON runner.id = errands.runner_id
+       WHERE errands.id = ?`,
+    )
+    .get(id);
   if (!errand)
     return res
       .status(404)
