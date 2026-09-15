@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: sa-runner-gateway
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_PATH
+        value: /var/data/errands.db
+      - key: SRG_SECRET
+        generateValue: true
+    disk:
+      name: sa-runner-data
+      mountPath: /var/data
+      sizeGB: 1

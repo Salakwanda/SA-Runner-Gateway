@@ -6,9 +6,7 @@ const crypto = require("crypto");
 const configuredDatabasePath = process.env.DATABASE_PATH;
 const databasePath = configuredDatabasePath
   ? path.resolve(configuredDatabasePath)
-  : process.env.VERCEL
-    ? path.join("/tmp", "errands.db")
-    : path.join(__dirname, "errands.db");
+  : path.join(__dirname, "errands.db");
 
 fs.mkdirSync(path.dirname(databasePath), { recursive: true });
 const db = new Database(databasePath);
