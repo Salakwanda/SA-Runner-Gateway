@@ -106,7 +106,7 @@ function ensureUser(id, full_name, email, phone, role, passwordHash = null) {
   return id;
 }
 
-const errand1Id = generateTrackingId();
+const errand1Id = "RUN-ZA-100001";
 
 const insertUser = db.prepare(`
   INSERT OR IGNORE INTO users (id, full_name, email, phone, role, password_hash)
@@ -125,7 +125,10 @@ const insertErrand = db.prepare(`
 
 const insertMessage = db.prepare(`
   INSERT INTO messages (errand_id, sender_id, message_text)
-  VALUES (?, ?, ?)
+  SELECT ?, ?, ?
+  WHERE NOT EXISTS (
+    SELECT 1 FROM messages WHERE errand_id = ? AND sender_id = ? AND message_text = ?
+  )
 `);
 
 db.transaction(() => {
@@ -174,8 +177,14 @@ db.transaction(() => {
     errand1Id,
     client1Id,
     "Hi Thabo, please confirm when you pick up the parcel.",
+    errand1Id,
+    client1Id,
+    "Hi Thabo, please confirm when you pick up the parcel.",
   );
   insertMessage.run(
+    errand1Id,
+    runner1Id,
+    "Hi Sipho, I am currently at the collection point.",
     errand1Id,
     runner1Id,
     "Hi Sipho, I am currently at the collection point.",
