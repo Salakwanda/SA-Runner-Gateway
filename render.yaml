@@ -2,8 +2,10 @@ services:
   - type: web
     name: sa-runner-gateway
     runtime: node
-    buildCommand: npm install
+    plan: starter
+    buildCommand: npm ci
     startCommand: npm start
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production

@@ -26,6 +26,10 @@ const verifyPassword = (password, storedHash) => {
 app.use(express.json()); // parse JSON bodies
 app.use(express.urlencoded({ extended: true }));
 
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 // Views and static
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
